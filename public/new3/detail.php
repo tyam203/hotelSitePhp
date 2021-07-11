@@ -1,0 +1,135 @@
+<main>
+<?php
+require_once('common/common.php');
+require_once('common/header.php');
+session_start();
+$roomId = $_GET['roomId'];
+$stayDate = $_GET['stayDate'];
+$roomNumber = $_GET['roomNumber'];
+// $_SESSION['roomId'] = $roomId;
+$checkInDate = $_GET['checkInDate'];
+$year = date('Y', strtotime($checkInDate));
+
+$month = date('n', strtotime($checkInDate));
+
+// 予約可能日のタイムスタンプを取得（３日先から予約可能）
+$today = time();
+$bookable = $today + 3600 * 24 * 2;
+
+$startTs = mktime(0, 0, 0, $month - 1, 1, $year);
+$ts = mktime(0, 0, 0, $month, 1, $year);
+$endTs = mktime(0, 0, 0, $month + 1, 1, $year);
+$prev = date('Y-m-d', $startTs);
+$next = date('Y-m-d', $endTs);
+
+// $prev = date('Y-m-d', strtotime($checkInDate . '-1 month'));
+// $ts = mktime(0, 0, 0, $month, 1, $year);
+// $next = date('Y-m-d', strtotime($checkInDate . '+1 month'));
+
+$sql = "SELECT *, hotel.id AS hotelId FROM room";
+$sql .= " JOIN hotel";
+$sql .= " ON hotel.id = room.hotel_id";
+$sql .= " WHERE room.id = $roomId";
+$result = $db->query($sql);
+$data = $result->fetch_object();
+$hotelId = $data->hotelId;
+echo '<h2>旅行代金</h2>';
+echo '<p>ホテル:  ' . $data->hotelName . '</p>';
+echo '<p>部屋タイプ:  ' . $data->room_type . '</p>';
+echo '<p>泊数:  ' . $stayDate . '泊</p>';
+echo '<p>部屋数:  ' . $roomNumber . '部屋</p>';
+echo '<p>' . $_SESSION['number'] . '名/1室利用</p>';
+// 実験段階で、日付決まっている場合もplan2.phpに戻る
+// 必要な情報　hotelId=1&stayDate=1&roomNumber=1　特にhotelId
+echo '<a href="plan2.php?stayDate=' . $stayDate . '&roomNumber=' . $roomNumber . '&hotelId=' . $hotelId . '">部屋タイプ選択に戻る</a>';
+
+echo '<p><button><a href="detail.php?roomId=' . $roomId . '&checkInDate=' . $prev . '&stayDate=' . $stayDate . '&roomNumber=' . $roomNumber . '">&nbsp;&lt;&nbsp;</a></button>';
+echo '<button>' . $year . '年' . $month . '月</button>';
+echo '<button><a href="detail.php?roomId=' . $roomId . '&checkInDate=' . $next . '&stayDate=' . $stayDate . '&roomNumber=' . $roomNumber . '">&nbsp;&gt;</a></button></p>';
+echo '<p>○：残室 10 以上 ×：残室なし</p>';
+
+echo '<table border="1">';
+echo '<tr>';
+echo '<th>日</th>';
+echo '<th>月</th>';
+echo '<th>火</th>';
+echo '<th>水</th>';
+echo '<th>木</th>';
+echo '<th>金</th>';
+echo '<th>土</th>';
+echo '</tr>';
+
+// $today = time();
+// $ts = mktime(0, 0, 0, $month, 1, $year);
+// $endTs = mktime(0, 0, 0, $month + 1, 1, $year);
+
+for (; $ts < $endTs; $ts = $ts += 3600 * 24) {
+    if (date('w', $ts) == 0) {
+        echo '<tr>';
+    }
+
+    // 1日の時だけ
+    if (date('j', $ts) == 1) {
+        for ($i = 0; $i < date('w', $ts); $i++) {
+            echo '<td></td>';
+        }
+    } 
+    echo '<td width="100px" height="50px">';
+    echo '<div>' . date('j', $ts) . '</div>';
+    $sql = " SELECT *, room.hotel_id AS hotelId, stock.date AS stockDate FROM price";
+    $sql .= " JOIN room";
+    $sql .= " ON price.roomId = room.id";
+    $sql .= " JOIN stock";
+    $sql .= " ON stock.roomId = room.id";
+    $sql .= " WHERE price.date ='" . date('Y-m-d', $ts) . "'";
+    $sql .= " AND price.roomId ='" . $roomId . "'";
+    $sql .= " AND stock.date ='" . date('Y-m-d', $ts) . "'";
+    // var_dump($sql);
+    $result = $db->query($sql);
+    $data = $result->fetch_object();
+    if (!empty($data->price)) {
+        // $totalPrice = $data->price * $_SESSION['roomNumber'] * $_SESSION['stayDate']; 
+        $totalPrice = $data->price * $roomNumber; 
+        $stock = $data->stock;
+        if ($stock >= 10) {
+            $stock = "〇";
+        } elseif($stock > 0) {
+            $stock = $data->stock . '室';
+        } else{
+            $stock = "×";
+        }   
+        if ($ts <= $bookable) {
+            echo '<div>予約不可</div>';
+            echo '<div>-</div>';
+
+        } else{
+
+            // echo '<a href="confirm.php?checkInDate=' . date('Y-m-d', $ts) . '&stayDate=' . $stayDate . '&roomNumber=' . $roomNumber . '&roomId=' . $roomId . '">予約する</a>';
+            echo '<a href="confirm.php?checkInDate=' . date('Y-m-d', $ts) . '&stayDate=' . $stayDate . '&roomNumber=' . $roomNumber . '&roomId=' . $roomId . '">';
+            echo '<div>' . $totalPrice . '円</div>';
+            echo '<div>' . $stock . '</div>';
+            echo '</a>';
+        }
+    } else {
+        echo '<div>設定なし</div>';
+    }
+    echo '</td>';
+
+    // 月末の時だけ
+    if(date('j' , $ts) == date('t', $ts)) {
+        for ($i = date('w', $ts); $i < 6 - date('w', $ts); $i++) {
+            echo '<td></td>';
+        }
+    }
+
+
+    if (date('w', $ts) == 6) {
+        echo '</tr>';
+    }
+}
+ 
+echo '</table>';
+?>
+</main>
+</body>
+</html>

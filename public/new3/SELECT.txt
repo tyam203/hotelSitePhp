@@ -1,0 +1,19 @@
+SELECT
+  hotel.*,
+  stock.stock,
+  MIN(price.price),
+  MAX(price.price)
+FROM room
+JOIN hotel ON hotel.id = room.hotel_id
+JOIN stock ON room.id = stock.roomId
+JOIN price ON room.id = price.roomId
+WHERE stock.date BETWEEN '2021-06-08' AND '2021-06-08'
+AND price.date BETWEEN '2021-06-08' AND '2021-06-08'
+AND hotel.prefectureId ='1'
+AND stock.stock >='1'
+AND room.capacity >='2'
+GROUP BY room.hotel_id
+
+
+
+UPDATE price SET stock = '20' WHERE id BETWEEN '1' AND '1742'

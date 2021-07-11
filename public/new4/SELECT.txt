@@ -1,0 +1,98 @@
+SELECT
+  hotel.*,
+  stock.stock,
+  MIN(price.price),
+  MAX(price.price)
+FROM room
+JOIN hotel ON hotel.id = room.hotel_id
+JOIN stock ON room.id = stock.roomId
+JOIN price ON room.id = price.roomId
+WHERE stock.date BETWEEN '2021-06-08' AND '2021-06-08'
+AND price.date BETWEEN '2021-06-08' AND '2021-06-08'
+AND hotel.prefectureId ='1'
+AND stock.stock >='1'
+AND room.capacity >='2'
+GROUP BY room.hotel_id
+
+
+
+UPDATE price SET stock = '20' WHERE id BETWEEN '1' AND '1742'
+
+plan.phpのpvc訂正部分
+
+<?php
+while ($data = $result2->fetch_object()) {
+    echo '<form method="get" action="confirm.php">';
+    echo '<input type="hidden" name="checkInDate" value="' . $checkInDate . '">';
+    echo '<input type="hidden" name="checkOutDate" value="' . $checkOutDate . '">';
+    echo '<input type="hidden" name="stayCount" value="' . $stayCount . '">';
+    echo '<input type="hidden" name="roomNumber" value="' . $roomNumber . '">';
+    echo '<input type="hidden" name="roomId" value="' . $data->roomId . '">';
+    echo '<p>部屋タイプ：' . $data->roomType . '</p>';
+    
+    // 合計金額
+    $totalPrice = $data->total * $roomNumber;
+    echo '<p>料金:' . $totalPrice . '円(' . $roomNumber . '部屋/' . $stayCount .'泊)</p>';
+    echo '<p>' . $inCharge . 'までキャンセル無料</p>';
+    echo '<input type="submit" value="予約に進む"><br>';
+    echo '<button><a href="detail.php?roomId=' . $data->roomId . '&checkInDate=' . $checkInDate . '&stayCount=' . $stayCount . '&roomNumber=' . $roomNumber . '&hotel=' . $data->hotelId . 
+    '">ほかの日付の料金も見る</a></button>';
+    echo '</form>';
+    echo '<hr>';
+}
+?>
+
+
+<?php
+        if ($result->num_rows > 0) {
+            while ($data = $result->fetch_object()) {
+                echo '<li>';
+                echo '<p>ホテル名:' . $data->hotelName . '</p>' ;
+                echo '<form method="GET" action="stayPlan.php">';
+                if (!empty($checkInDate)){
+                    echo '<input type="hidden" name="checkInDate" value="' . $checkInDate . '">';
+                }
+                echo '<input type="hidden" name="hotelId" value="' . $data->hotelId . '">';
+                echo '<input type="hidden" name="stayCount" value="' . $stayCount . '">';
+                echo '<input type="hidden" name="roomNumber" value="' . $roomNumber . '">';
+                echo '<input type="hidden" name="totalAdult" value="' . $totalAdult . '">';
+                echo '<input type="hidden" name="totalChild" value="' . $totalChild . '">';
+                echo '<input type="hidden" name="totalNoBed" value="' . $totalNoBed . '">';
+                echo '<input type="hidden" name="numberOfBed" value="' . $numberOfBed . '">';
+                echo '<button type=submit">宿泊プラン一覧はこちら</button>';
+                echo '</form>';
+                echo '</li>';
+                echo '<br>';
+                echo '<hr>';
+            }
+        } else{
+            echo '<p>条件に一致するホテルがありませんでした</p>';
+            echo '<p>条件を変更して再検索してください</p>';
+        }
+    ?>
+
+
+<?php for($i = 1; $i <= 5; $i++): ?>
+
+            <div class="room room<?= $i ?>">
+            <div><?= $i ?>部屋目</div>
+
+
+            <label>大人（12歳以上）</label>
+            <select name="room<?= $i ?>Adult" class="room<?= $i ?>Adult">
+            <?php makeOptions(0, 5, '名'); ?>
+            </select>
+
+
+            <label>こども（ベッドあり）</label>
+            <select name="room<?= $i ?>Child" class="room<?= $i ?>Child">
+            <?php makeOptions(0, 5, '名'); ?>
+            </select>
+
+
+            <label>こども（ベッドなし）</label>
+            <select name="room<?= $i ?>NoBed" class="room<?= $i ?>NoBed">
+            <?php makeOptions(0, 5, '名'); ?>
+            </select>
+            </div>
+        <?php endfor; ?>
